@@ -8,6 +8,7 @@ import org.springframework.util.StringUtils;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,8 +36,8 @@ public class OrderRepository {
 
     public List<Order> findAllByString(OrderSearch orderSearch) {
 
-            String jpql = "select o from Order o join o.member m";
-            boolean isFirstCondition = true;
+        String jpql = "select o from Order o join o.member m";
+        boolean isFirstCondition = true;
 
         //주문 상태 검색
         if (orderSearch.getOrderStatus() != null) {
@@ -101,29 +102,33 @@ public class OrderRepository {
         return query.getResultList();
     }
 
-    public List<Order> findAllWithMemberDelivery() {
-        return em.createQuery(
-                "select o from Order o" +
-                        " join fetch o.member m" +
-                        " join fetch o.delivery d", Order.class)
-                .getResultList();
-    }
+
 
     public List<Order> findAllWithItem() {
         return em.createQuery(
-                "select distinct o from Order o" +
-                        " join fetch o.member m" +
-                        " join fetch o.delivery d" +
-                        " join fetch o.orderItems oi" +
-                        " join fetch oi.item i", Order.class)
+                        // 데이터 조인한 만큼 중복된 쿼리를 날림 = 1대 다 조인이 있으면 DB의 row가 증가함
+                        // JPA의 distinct는 sql에 distinct를 추가하고 중복된 조회는 하지 않음 -> 페이징 안됨!
+                        "select distinct o from Order o" +
+                                " join fetch o.member m" +
+                                " join fetch o.delivery d" +
+                                " join fetch o.orderItems oi" +
+                                " join fetch oi.item i", Order.class)
+                .getResultList();
+    }
+
+    public List<Order> findAllWithMemberDelivery() {
+        return em.createQuery(
+                        "select o from Order o" +
+                                " join fetch o.member m" +
+                                " join fetch o.delivery d", Order.class)
                 .getResultList();
     }
 
     public List<Order> findAllWithMemberDelivery(int offset, int limit) {
         return em.createQuery(
-                "select o from Order o" +
-                        " join fetch o.member m" +
-                        " join fetch o.delivery d", Order.class)
+                        "select o from Order o" +
+                                " join fetch o.member m" +
+                                " join fetch o.delivery d", Order.class)
                 .setFirstResult(offset)
                 .setMaxResults(limit)
                 .getResultList();
